@@ -1,0 +1,15 @@
+Brand New, Factory Direct, 5mm LEDs
+
+Six Colours
+RED, BLUE, GREEN, ORANGE, YELLOW and WHITE
+
+In packs of 10, 20, 50, 60,100 and 120
+
+Details and Specs:
+
+Red: V=2.0-2.2, I=20mA, Wavelength= 620-625 nm, Intensity= 600-800 mcd
+Blue: V=3.0-3.2, I=20mA, Wavelength= 460-465 nm, Intensity= 600-800 mcd
+Green: V=3.0-3.2., I=20mA, Wavelength= 517-520 nm, Intensity= 2000-3000 mcd
+Orange: V=2.0-2.2., I=20mA, Wavelength= 600-605 nm, Intensity= 600-800 mcd
+Yellow: V=2.0-2.2., I=20mA, Wavelength= 588-590 nm, Intensity= 500-600 mcd
+White: V=3.0-3.2., I=20mA, Wavelength= 7000-8000K, Intensity= 14000-16000 mcd
