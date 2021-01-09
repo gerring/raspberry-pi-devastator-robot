@@ -16,8 +16,8 @@ GPIO.setup(13,GPIO.OUT)
 GPIO.setup(15,GPIO.OUT)
 
 # LED
-GPIO.setup(29,GPIO.OUT)
-GPIO.output(29,True)
+GPIO.setup(11,GPIO.OUT)
+GPIO.output(11,True)
 
 
 # Get the curses window, turn off echoing of keyboard to screen, turn on
