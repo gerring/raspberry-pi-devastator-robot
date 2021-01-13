@@ -172,17 +172,20 @@ def main():
 
             elif char == curses.KEY_ENTER or char == 10 or char == 13:
                 stop()
+                print(code)
                 process_code(code, [7,11])
 
             else:
                 process_movement(char)
 
+            # Blank code if it is a direct command
+            # which has been processed.
             if char in commands:
                 code = ''
-                continue
-
-            # They might be building a command like "-t0.5(ENTER)" to change the blink time.
-            code = code+str(char)
+            else:
+                # They might be building a command like "-t0.5(ENTER)" to change the blink time.
+                code = code+str(char)
+                print(code)
 
 
     finally:
