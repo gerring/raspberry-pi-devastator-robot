@@ -131,7 +131,7 @@ def main():
         time a char command is accepted, the 
         '''
 
-        commands = ['q', 'S', 'b', 'a', 'j', curses.KEY_ENTER, 10, 13,
+        commands = [ord('q'), ord('S'), ord('b'), ord('a'), ord('j'), curses.KEY_ENTER, 10, 13,
                     curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT]
         ''' 
         All the possible direct commands. Everything else is a code.
@@ -169,6 +169,9 @@ def main():
                 else:
                     blink_thread = threading.Thread(target=toggle_function, args=(blink_time, [13,16], [18,15], False, ))
                     blink_thread.start()
+
+            elif char == ord('-'):  # We are about to process a code, reset
+                code = ''
 
             elif char == curses.KEY_ENTER or char == 10 or char == 13:
                 stop()
