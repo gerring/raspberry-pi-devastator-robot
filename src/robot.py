@@ -183,7 +183,7 @@ def main():
                 code = ''
             else:
                 # They might be building a command like "-t0.5(ENTER)" to change the blink time.
-                code += char
+                code += chr(char)
                 print(code)
 
 
