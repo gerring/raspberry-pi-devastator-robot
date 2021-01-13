@@ -30,12 +30,18 @@ curses.cbreak()
 screen.keypad(True)
 
 # We have a thread which we nullify to stop blinking
+global blink_thread
 blink_thread = None
+global blink_time
+blink_time = 0.5
 
-def toggle_function(sleep_time, pins, op):
+def toggle_function(sleep_time, pins, op, leave_on):
     '''
     This function simply toggles between off and on all the
     pins in the pin list and sleeps for sleep time between.
+
+    It can be used for instance to blink lights or make the motors
+    enter a jerky mode.
     '''
     while blink_thread:
         for pin in pins:
@@ -54,12 +60,12 @@ def toggle_function(sleep_time, pins, op):
 
         time.sleep(sleep_time)
 
-    # Finally leave them on
+    # Finally leave them at leave_on
     for pin in pins:
-        GPIO.output(pin, True)
+        GPIO.output(pin, leave_on)
     if op:
         for pin in op:
-            GPIO.output(pin, True)
+            GPIO.output(pin, leave_on)
 
 def process_movement(character):
     if character == curses.KEY_UP:
@@ -83,40 +89,109 @@ def process_movement(character):
         GPIO.output(18, False)
         GPIO.output(13, False)
         GPIO.output(15, True)
-    elif character == 10: # Okay = stop!
-        GPIO.output(16, False)
-        GPIO.output(18, False)
-        GPIO.output(13, False)
-        GPIO.output(15, False)
+
+def stop():
+    GPIO.output(16, False)
+    GPIO.output(18, False)
+    GPIO.output(13, False)
+    GPIO.output(15, False)
+
+def process_code(code, pins):
+
+    code_applied = False
+
+    # If there is no code, we are done
+    if not code:
+        return
+
+    # "-t0.5[ENTER]" to change the blink time or jerk time
+    if code.startswith("-t"):
+        global blink_time
+        blink_time = float(code[2:10])
+        code_applied = True
+
+    if code_applied: # Tell user we updated the code
+        for pin in pins:
+            GPIO.output(pin, False)
+        time.sleep(0.5)
+        for pin in pins:
+            GPIO.output(pin, True)
+
+
 
 # Main function which processes key presses.
-try:
-    while True:
-        char = screen.getch()
-        if char == ord('q'):
-            break
-        elif char == ord('S'): # Added for shutdown on capital S
-            os.system ('sudo shutdown now') # shutdown right now!
-        elif char == ord('b'):  # Start/stop lights blinking
-            if blink_thread:
-                blink_thread = None
-            else:
-                blink_thread = threading.Thread(name="Blinker", target=toggle_function, args=(0.5, [7,11], None, ))
-                blink_thread.start()
+def main():
+    try:
 
-        elif char == ord('a'):  # Start/stop lights blinking, alternate
-            if blink_thread:
-                blink_thread = None
-            else:
-                blink_thread = threading.Thread(target=toggle_function, args=(0.5, [7], [11], ))
-                blink_thread.start()
-        else:
-            process_movement(char)
+        code = ""
+        '''
+        They can type whole codes or cursor commands. For example
+        ENTER or ok stops the robot but if they have previously typed
+        t0.5 then the blink time will be changed to 0.5 as well. Each 
+        time a char command is accepted, the 
+        '''
 
-finally:
-    #Close down curses properly, inc turn echo back on!
-    curses.nocbreak(); screen.keypad(0); curses.echo()
-    curses.endwin()
-    GPIO.cleanup()
+        commands = ['q', 'S', 'b', 'a', 'j', curses.KEY_ENTER, 10, 13,
+                    curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT]
+        ''' 
+        All the possible direct commands. Everything else is a code.
+        '''
+
+        global blink_thread, blink_time
+        '''
+        State is held in globals. This is a small script.
+        '''
+
+        while True:
+            char = screen.getch()
+            if char == ord('q'):
+                break
+            elif char == ord('S'): # Added for shutdown on capital S
+                os.system ('sudo shutdown now') # shutdown right now!
+
+            elif char == ord('b'):  # Start/stop lights blinking
+                if blink_thread:
+                    blink_thread = None
+                else:
+                    blink_thread = threading.Thread(name="Blinker", target=toggle_function, args=(blink_time, [7,11], None, True, ))
+                    blink_thread.start()
+
+            elif char == ord('a'):  # Start/stop lights blinking, alternate
+                if blink_thread:
+                    blink_thread = None
+                else:
+                    blink_thread = threading.Thread(target=toggle_function, args=(blink_time, [7], [11], True, ))
+                    blink_thread.start()
+
+            elif char == ord('j'):  # Start/stop motors jerking. You might want to do '-t5[ENTER]' to change the time.
+                if blink_thread:
+                    blink_thread = None
+                else:
+                    blink_thread = threading.Thread(target=toggle_function, args=(blink_time, [13,16], [18,15], False, ))
+                    blink_thread.start()
+
+            elif char == curses.KEY_ENTER or char == 10 or char == 13:
+                stop()
+                process_code(code, [7,11])
+
+            else:
+                process_movement(char)
+
+            if char in commands:
+                code = ''
+                continue
+
+            # They might be building a command like "-t0.5(ENTER)" to change the blink time.
+            code = code+str(char)
+
+
+    finally:
+        #Close down curses properly, inc turn echo back on!
+        curses.nocbreak(); screen.keypad(0); curses.echo()
+        curses.endwin()
+        GPIO.cleanup()
+
+if __name__ == "__main__":
+    main()
     
 
