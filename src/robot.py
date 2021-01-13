@@ -97,7 +97,12 @@ def stop():
     GPIO.output(15, False)
 
 def process_code(code, pins):
-
+    '''
+    Used to reprogram the robot, for instance set blink time
+    :param code:
+    :param pins:
+    :return:
+    '''
     code_applied = False
 
     # If there is no code, we are done
@@ -110,14 +115,62 @@ def process_code(code, pins):
         blink_time = float(code[2:10])
         code_applied = True
 
-    if code_applied: # Tell user we updated the code
+    if code_applied: # Tell user we updated the code by seting pins e.g. flash lights
         for pin in pins:
             GPIO.output(pin, False)
         time.sleep(0.5)
         for pin in pins:
             GPIO.output(pin, True)
 
+    return code_applied
 
+def process_command(char):
+    '''
+    Used to process a command on the robot, for instance move forward or blink led
+    :param char:
+    :return:
+    '''
+
+    global blink_thread, blink_time
+    '''
+    State is held in globals. This is a small script.
+    '''
+
+    if char == ord('q'):
+        return False
+
+    elif char == ord('S'):  # Added for shutdown on capital S
+        os.system('sudo shutdown now')  # shutdown right now!
+
+    elif char == ord('b'):  # Start/stop lights blinking
+        if blink_thread:
+            blink_thread = None
+        else:
+            blink_thread = threading.Thread(name="Blinker", target=toggle_function,
+                                            args=(blink_time, [7, 11], None, True,))
+            blink_thread.start()
+
+    elif char == ord('a'):  # Start/stop lights blinking, alternate
+        if blink_thread:
+            blink_thread = None
+        else:
+            blink_thread = threading.Thread(name="Alternate_blinker", target=toggle_function, args=(blink_time, [7], [11], True,))
+            blink_thread.start()
+
+    elif char == ord('j'):  # Start/stop motors jerking. You might want to do '-t5[ENTER]' to change the time.
+        if blink_thread:
+            blink_thread = None
+        else:
+            blink_thread = threading.Thread(name="Jerker", target=toggle_function, args=(blink_time, [13, 16], [18, 15], False,))
+            blink_thread.start()
+
+    elif char == curses.KEY_ENTER or char == 10 or char == 13:
+        stop()
+
+    else:
+        process_movement(char)
+
+    return True
 
 # Main function which processes key presses.
 def main():
@@ -131,64 +184,38 @@ def main():
         time a char command is accepted, the 
         '''
 
-        commands = [ord('q'), ord('S'), ord('b'), ord('a'), ord('j'), curses.KEY_ENTER, 10, 13,
+        commands = [ord('q'), ord('S'), ord('b'), ord('a'), ord('j'),
+                    curses.KEY_ENTER, 10, 13,
                     curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT]
         ''' 
         All the possible direct commands. Everything else is a code.
         '''
 
-        global blink_thread, blink_time
-        '''
-        State is held in globals. This is a small script.
-        '''
+        reprogramming = False
+        ''' A boolean set to reprogram the current settings e.g. set blink time lower 
+        When reprogramming commands cannot be entered. '''
 
         while True:
             char = screen.getch()
-            if char == ord('q'):
-                break
-            elif char == ord('S'): # Added for shutdown on capital S
-                os.system ('sudo shutdown now') # shutdown right now!
 
-            elif char == ord('b'):  # Start/stop lights blinking
-                if blink_thread:
-                    blink_thread = None
-                else:
-                    blink_thread = threading.Thread(name="Blinker", target=toggle_function, args=(blink_time, [7,11], None, True, ))
-                    blink_thread.start()
-
-            elif char == ord('a'):  # Start/stop lights blinking, alternate
-                if blink_thread:
-                    blink_thread = None
-                else:
-                    blink_thread = threading.Thread(target=toggle_function, args=(blink_time, [7], [11], True, ))
-                    blink_thread.start()
-
-            elif char == ord('j'):  # Start/stop motors jerking. You might want to do '-t5[ENTER]' to change the time.
-                if blink_thread:
-                    blink_thread = None
-                else:
-                    blink_thread = threading.Thread(target=toggle_function, args=(blink_time, [13,16], [18,15], False, ))
-                    blink_thread.start()
-
-            elif char == ord('-'):  # We are about to process a code, reset
+            if char == ord('-'):  # We are about to process a code, reset
                 code = ''
+                reprogramming = True
 
-            elif char == curses.KEY_ENTER or char == 10 or char == 13:
-                stop()
-                process_code(code, [7,11])
-
-            else:
-                process_movement(char)
-
-            # Blank code if it is a direct command
-            # which has been processed.
-            if char in commands:
-                code = ''
-            else:
+            if reprogramming:
                 # They might be building a command like "-t0.5(ENTER)" to change the blink time.
                 code += chr(char)
-                print(code)
 
+                if char == curses.KEY_ENTER or char == 10 or char == 13:
+                    try:
+                        process_code(code, [7, 11])
+                    finally:
+                        reprogramming = False
+
+            else:
+                active = process_command(char)
+                if not active:
+                    return
 
     finally:
         #Close down curses properly, inc turn echo back on!
