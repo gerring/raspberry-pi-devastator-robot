@@ -123,7 +123,7 @@ def process_code(code, pins):
 def main():
     try:
 
-        code = ""
+        code = ''
         '''
         They can type whole codes or cursor commands. For example
         ENTER or ok stops the robot but if they have previously typed
@@ -172,7 +172,6 @@ def main():
 
             elif char == curses.KEY_ENTER or char == 10 or char == 13:
                 stop()
-                print(code)
                 process_code(code, [7,11])
 
             else:
@@ -184,7 +183,7 @@ def main():
                 code = ''
             else:
                 # They might be building a command like "-t0.5(ENTER)" to change the blink time.
-                code = code+str(char)
+                code += char
                 print(code)
 
 
