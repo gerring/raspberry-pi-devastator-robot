@@ -207,8 +207,11 @@ def main():
                 code += chr(char)
 
                 if char == curses.KEY_ENTER or char == 10 or char == 13:
+                    # noinspection PyBroadException
                     try:
                         process_code(code, [7, 11])
+                    except:
+                        print("Code '{}' is not excepted.".format(code))
                     finally:
                         reprogramming = False
 
