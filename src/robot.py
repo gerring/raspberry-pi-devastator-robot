@@ -35,6 +35,10 @@ blink_thread = None
 global blink_time
 blink_time = 0.5
 
+global jerkA, jerkB
+jerkA = [13, 16]
+jerkB = [18, 15]
+
 def toggle_function(sleep_time, pins, op, leave_on):
     '''
     This function simply toggles between off and on all the
@@ -115,6 +119,20 @@ def process_code(code, pins):
         blink_time = float(code[2:10])
         code_applied = True
 
+    # Reconfigure jerk mode between forwards/backwards and round and round
+    if code.startswith("-j"):
+        jerkcode = int(code[2:10])
+        code_applied = True
+        global jerkA, jerkB
+        if jerkcode == 1:
+            jerkA = [13, 16]
+            jerkB = [18, 15]
+        elif jerkcode == 2:
+            jerkA = [13, 18]
+            jerkB = [15, 16]
+        else:
+            code_applied = False
+
     if code_applied: # Tell user we updated the code by seting pins e.g. flash lights
         for pin in pins:
             GPIO.output(pin, False)
@@ -161,7 +179,8 @@ def process_command(char):
         if blink_thread:
             blink_thread = None
         else:
-            blink_thread = threading.Thread(name="Jerker", target=toggle_function, args=(blink_time, [13, 16], [18, 15], False,))
+            global jerkA, jerkB
+            blink_thread = threading.Thread(name="Jerker", target=toggle_function, args=(blink_time, jerkA, jerkB, False,))
             blink_thread.start()
 
     elif char == curses.KEY_ENTER or char == 10 or char == 13:
